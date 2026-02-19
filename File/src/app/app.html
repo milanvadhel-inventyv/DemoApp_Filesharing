@@ -1,0 +1,138 @@
+@if(RoomConnected())
+{
+<div class="h-screen flex flex-col bg-slate-900 text-white">
+
+    <div
+        class="flex justify-between items-center px-6 py-4 bg-slate-800 border-b border-slate-700">
+        <div>
+            <h3 class="text-xl font-semibold">Username: {{ username }}</h3>
+            <h3 class="text-sm text-slate-400">Room: {{ room }}</h3>
+        </div>
+        <button
+            (click)="Disconnect()"
+            class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg transition">
+            Disconnect
+        </button>
+    </div>
+
+    <div class="flex flex-1 overflow-hidden">
+
+        <div
+            class="w-64 bg-slate-800 border-r border-slate-700 p-4 overflow-y-auto">
+            <h4 class="text-lg font-semibold mb-3">Users in Room</h4>
+            <ul class="space-y-2">
+                @for(user of RoomUsers(); track user.socketId)
+                {
+                <li class="bg-slate-700 p-2 rounded-md">
+                    {{ user.username }}
+                    @if(user.username === username){
+                    <span class="text-sky-400 text-xs ml-2">(You)</span>
+                    }
+                </li>
+                }
+            </ul>
+        </div>
+
+        <div class="flex-1 flex flex-col">
+
+            <div class="flex-1 overflow-y-auto p-6 space-y-4">
+                <h4 class="text-lg font-semibold">Messages</h4>
+
+                @for(msg of messages(); track $index)
+                {
+                <div class="bg-slate-800 p-4 rounded-lg max-w-md shadow">
+                    <strong class="text-sky-400">{{ msg.sender }}</strong>
+
+                    @if(msg.file)
+                    {
+                    <div class="mt-2 bg-slate-700 p-3 rounded-md">
+                        <a
+                            [href]="msg.file.fileurl"
+                            target="_blank"
+                            download
+                            class="text-sky-400 hover:underline break-all">
+                            {{ msg.file.filename }}
+                        </a>
+
+                        <div class="text-xs text-slate-400 mt-1">
+                            {{ msg.file.filesize }} bytes
+                        </div>
+                        <div class="text-xs text-slate-400 mt-1">
+                            {{ msg.CreatedAt | date:'dd/MM/yyyy, hh:mm:ss a' }}
+                        </div>
+                        <button
+                            (click)="downloadfile(msg.file.fileurl)">Download</button>
+
+                    </div>
+                    }
+                </div>
+                }
+            </div>
+
+            <div class="p-4 bg-slate-800 border-t border-slate-700">
+                <input
+                    type="file"
+                    (change)="fileUpload($event)"
+                    class="text-sm text-slate-300 file:bg-sky-500 file:text-white 
+                           file:px-4 file:py-2 file:rounded-lg file:border-0 
+                           file:cursor-pointer hover:file:bg-sky-600">
+            </div>
+            @if(progress() > 0)
+            {
+            <div class="px-4 py-2 bg-slate-800 border-t border-slate-700">
+                <div class="text-xs mb-1 text-slate-400">
+                    Uploading... {{progress()}}%
+                </div>
+
+                <div
+                    class="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
+                    <div
+                        class="bg-sky-500 h-2 transition-all duration-300"
+                        [style.width.%]="progress()">
+                    </div>
+                </div>
+            </div>
+            }
+
+        </div>
+
+    </div>
+
+</div>
+}
+@else
+{
+<div class="h-screen flex items-center justify-center bg-slate-900 text-white">
+
+    <div class="bg-slate-800 p-8 rounded-xl shadow-xl w-80 space-y-5">
+
+        <h2 class="text-xl font-semibold text-center">Join Room</h2>
+
+        <div class="space-y-1">
+            <label class="text-sm text-slate-400">Username</label>
+            <input type="text"
+                placeholder="Enter username..."
+                [(ngModel)]="username"
+                class="w-full px-3 py-2 rounded-md bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+        </div>
+
+        <div class="space-y-1">
+            <label class="text-sm text-slate-400">Room</label>
+            <input type="text"
+                placeholder="Enter RoomId..."
+                [(ngModel)]="room"
+                class="w-full px-3 py-2 rounded-md bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+        </div>
+
+        <button
+            (click)="Connect()"
+            type="button"
+            class="w-full bg-sky-500 hover:bg-sky-600 py-2 rounded-lg transition font-medium">
+            Connect
+        </button>
+
+    </div>
+
+</div>
+}
+<!-- <button class="btn btn-secondary"> Xyz</button> -->
