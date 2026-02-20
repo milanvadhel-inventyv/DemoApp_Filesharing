@@ -72,11 +72,17 @@
             <div class="p-4 bg-slate-800 border-t border-slate-700">
                 <input
                     type="file"
-                    (change)="fileUpload($event)"
+                    (change)="fileStore($event)"
                     class="text-sm text-slate-300 file:bg-sky-500 file:text-white 
                            file:px-4 file:py-2 file:rounded-lg file:border-0 
                            file:cursor-pointer hover:file:bg-sky-600">
+
             </div>
+            @if(file)
+            {
+
+            <button (click)="fileUpload()">ShareFile</button>
+            }
             @if(progress() > 0)
             {
             <div class="px-4 py-2 bg-slate-800 border-t border-slate-700">

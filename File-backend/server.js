@@ -85,6 +85,9 @@ app.get("/messages/:roomId", async (req, res) => {
 
   res.json(messages);
 });
+const sanitizeFilename = (name) => {
+  return name.replace(/[^\w.-]/g, "_");
+};
 
 app.post("/File-upload", upload.single("file"), async (req, res) => {
   try {
@@ -93,7 +96,8 @@ app.post("/File-upload", upload.single("file"), async (req, res) => {
     if (!file) {
       res.status(400).json({ error: "File not uploaded" });
     }
-    const objectName = `${Date.now()}-${file.originalname}`;
+    const safeName = sanitizeFilename(file.originalname);
+    const objectName = `${Date.now()}-${safeName}`;
     await minioclient.putObject(BUCKET, objectName, file.buffer, file.size, {
       "Content-Type": file.mimetype,
     });
@@ -141,7 +145,9 @@ app.post("/Chunk-upload", upload.single("chunk"), async (req, res) => {
 app.post("/Merge-Chunk", async (req, res) => {
   try {
     console.log("Merge Chunk");
-    const { uploadId, totalChunks, filename, room, username } = req.body;
+    const { uploadId, totalChunks, filename, mimetype, room, username } =
+      req.body;
+    console.log("file types:", mimetype);
     const temp = `./temp/${uploadId}`;
     const finalpath = path.join(temp, "final");
     const writestream = fsSync.createWriteStream(finalpath);
@@ -154,15 +160,18 @@ app.post("/Merge-Chunk", async (req, res) => {
       const chunkdata = await fs.readFile(chunkpath);
       writestream.write(chunkdata);
       await fs.unlink(chunkpath);
-      await fs.rmdir(finalpath);
+      // await fs.rmdir(finalpath);
     }
     writestream.end();
     await new Promise((resolve) => writestream.on("finish", resolve));
-    const objectName = `${Date.now()}-${filename}`;
+    const safeName = sanitizeFilename(filename);
+    const objectName = `${Date.now()}-${safeName}`;
     readstream = fsSync.createReadStream(finalpath);
-    await minioclient.putObject(BUCKET, objectName, readstream);
+    await minioclient.putObject(BUCKET, objectName, readstream, {
+      "Content-Type": mimetype,
+    });
     await fs.unlink(finalpath);
-    await fs.rmdir(temp);
+    await fs.rm(temp, { recursive: true, force: true });
     const fileUrl = `http://localhost:9000/${BUCKET}/${objectName}`;
     console.log(fileUrl);
     const message = await Message.create({
@@ -190,7 +199,7 @@ app.get("/download", async (req, res) => {
     const { fileurl } = req.query;
 
     // Extract objectName from URL
-    const objectName = fileurl.split("/").pop();
+    const objectName = decodeURIComponent(fileurl.split("/").pop());
 
     const presignedUrl = await minioclient.presignedGetObject(
       BUCKET,

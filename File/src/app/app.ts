@@ -19,7 +19,7 @@ export class App {
   websocket = inject(Websocket);
   fileupload = inject(FileUpload);
   progress = this.fileupload.Progress;
-
+  file: File | null = null;
   constructor() {
     // this.websocket.connect(this.username, this.room);
     console.log('App.compotent.ts');
@@ -51,19 +51,21 @@ export class App {
     this.RoomConnected.set(false);
   }
 
-  fileUpload(event: any) {
-    const file: File = event.target.files[0];
-    if (!file) {
+  fileStore(event: any) {
+    this.file = event.target.files[0];
+  }
+  fileUpload() {
+    if (!this.file) {
       return;
     }
     const one_mb = 1024 * 1024;
-    if (file.size >= one_mb) {
-      this.fileUploadViaChunks(file);
+    if (this.file.size >= one_mb) {
+      this.fileUploadViaChunks(this.file);
       return;
     }
 
     const formdata = new FormData();
-    formdata.append('file', file);
+    formdata.append('file', this.file);
     formdata.append('username', this.username);
     formdata.append('room', this.room);
     this.fileupload.ShareFile(formdata);
@@ -93,6 +95,7 @@ export class App {
       uploadId,
       totalChunks,
       filename: file.name,
+      mimetype: file.type,
       username: this.username,
       room: this.room,
     });
